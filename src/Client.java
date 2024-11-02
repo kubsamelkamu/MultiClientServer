@@ -6,20 +6,24 @@ public class Client {
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 1234;
     private static PrintWriter out;
+    private static String username;
 
     public static void main(String[] args) {
         try (Socket socket = new Socket(SERVER_ADDRESS, SERVER_PORT)) {
             System.out.println("Connected to the server.");
-            new Thread(new MessageReceiver(socket)).start();
-
             out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             try (Scanner scanner = new Scanner(System.in)) {
-                String userInput;
+                System.out.print("Enter your username: ");
+                username = scanner.nextLine();
+                out.println(username);
+                new Thread(new MessageReceiver(in)).start();
 
+                String userInput;
                 while (true) {
                     userInput = scanner.nextLine();
                     if (userInput.equalsIgnoreCase("exit")) {
-                        break;
+                        break; 
                     }
                     out.println(userInput);
                 }
@@ -30,21 +34,18 @@ public class Client {
     }
 
     static class MessageReceiver implements Runnable {
-        private Socket socket;
+        private BufferedReader reader;
 
-        public MessageReceiver(Socket socket) {
-            this.socket = socket;
+        public MessageReceiver(BufferedReader reader) {
+            this.reader = reader;
         }
 
         @Override
         public void run() {
             try {
-                InputStream input = socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-
                 String serverMessage;
                 while ((serverMessage = reader.readLine()) != null) {
-                    System.out.println("SERVER RESPONSE BACK: " + serverMessage);
+                    System.out.println("Server: " + serverMessage);
                 }
             } catch (IOException e) {
                 System.out.println("Error in receiving message: " + e.getMessage());
